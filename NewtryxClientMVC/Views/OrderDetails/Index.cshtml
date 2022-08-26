@@ -1,0 +1,455 @@
+﻿
+
+@{
+    ViewBag.Title = "Order Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link href="https://ajax.aspnetcdn.com/ajax/jquery.ui/1.10.4/themes/dark-hive/jquery-ui.css" rel="stylesheet" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+<link href="~/lib/select2/dist/css/select2.min.css" rel="stylesheet" />
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+<h2 class="text-center">PLACEMENT OF AN ORDER</h2>
+<hr />
+<div class="form-group" style="display:none;">
+    <input id="txtOrderDetailId" class="form-control" name="OrderDetailId" />
+</div>
+<div class="form-group" style="display:none;">
+    <input id="txtOrderId" class="form-control" name="OrderId" />
+</div>
+<div class="form-group" @*style="display:none;"*@>
+    <input id="txtItemId" class="form-control" name="ItemId" />
+</div>
+<div class="form-group" @*style="display:none;"*@>
+    <input id="txtReservationId" class="form-control" name="ReservationId" />
+</div>
+
+<div class="alert alert-success alert-dismissible fade show" role="alert" id="div-success" style="display: none;">
+    <strong>Congratulations</strong>. You have successfully placed a new order. <br />
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+<div class="alert alert-danger alert-dismissible fade show" role="alert" id="div-error" style="display: none;">
+    <strong>Fail</strong>. You need to fill in any empty textboxes. <br />
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                <label for="BookingNo">Booking Number:</label>
+                <select id="txtBookingNo" class="form-control" name="BookingNo" required>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label for="SubTotal">SubTotal:</label>
+                <input id="txtSubTotal" class="form-control" name="SubTotal" required />
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label for="FinalTotal">Final Total:</label>
+                <input id="txtFinalTotal" class="form-control" name="FinalTotal" required />
+            </div>
+        </div>
+    </div>
+    <div id="div-additem">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="ItemName">Item Name:</label>
+                    <select id="txtItemName" class="form-control" name="ItemName"></select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="UnitPrice">Unit Price:</label>
+                    <input id="txtUnitPrice" class="form-control" name="UnitPrice" readonly required />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="Quantity">Quantity:</label>
+                    <input type="number" id="txtQuantity" class="form-control" name="Quantity" required />
+                </div>
+            </div>
+        </div>
+    </div>
+    <br />
+    <div class="row">
+        <div class="col-md-6">
+            <div class="text-left">
+                <button id="btnAddItem" class="btn btn-primary" value="Add new Item">Add More</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container" hidden>
+    <br />
+    <hr />
+    <h2 class="text-center">All Order Details</h2>
+    <hr />
+    <table id="tblReservation" class="table table-sm table-striped table-bordered m-2">
+        <thead>
+            <tr>
+                <th>OrderDetail Id</th>
+                <th>Order Number</th>
+                <th>Item Name</th>
+                <th>Booking Number</th>
+                <th>Unit Price</th>
+                <th>Quantity</th>
+                <th>SubTotal</th>
+                <th>Order Date</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+   
+</div>
+
+<div class="container">
+    <br />
+    <hr />
+    <table id="tblItemsList" class="table table-sm table-striped table-bordered m-2">
+        <thead>
+            <tr>
+                <th hidden>Item Id</th>
+                <th>Item Name</th>
+                <th>Unit Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="text-right">
+                <button id="btnOrder" class="btn btn-success" value="Place an order">Place an order</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+
+    $(document).ready(function () {
+
+        GetBookingNo();
+
+        CalculateSubTotal();
+
+        GetItemName();
+
+        //GetRestoId();
+
+        GetunitPrice();
+
+        GetReservationId();
+
+        GetItemId();
+
+        //DisplayData();
+
+        $("#btnAddItem").click(() => {
+            var itemName = $("#txtItemName").val();
+            var quantity = $("#txtQuantity").val();
+            var unitPrice = $("#txtUnitPrice").val();
+            if (itemName == '-- Select Item --' || quantity == '' || unitPrice == '') {
+                console.log('Please fill in the textboxes');
+            } else {
+                AddToChartTable();
+                FinalItemTotal();
+
+            }
+        });
+
+
+        $("#btnOrder").click(() => {
+            FinalPayment();
+        });
+
+
+    });
+
+    const FinalItemTotal = () => {
+        $("#txtFinalTotal").val("0.00");
+        var FinalTotal = 0.00;
+        $("#tblItemsList").find("tr:gt(0)").each(function () {
+            var Total = parseFloat($(this).find("td:eq(4)").text());
+            FinalTotal += Total;
+        });
+        $("#txtFinalTotal").val(parseFloat(FinalTotal).toFixed(2));
+        //console.log(parseFloat(FinalTotal).toFixed(2));
+    }
+
+    const AddToChartTable = () => {
+        var tblItemList = $("#tblItemsList");
+        var unitPrice = $("#txtUnitPrice").val();
+        var qty = $("#txtQuantity").val();
+        var itemId = $("#txtItemId").val();
+        var itemName = $("#txtItemName option:selected").text();
+        var subtotal = (unitPrice * qty);
+
+        var itemList = "<tr><td hidden>" + itemId +
+            "</td><td>" + itemName +
+            "</td><td>" + parseFloat(unitPrice).toFixed(2) +
+            "</td><td>" + parseFloat(qty).toFixed(2) +
+            "</td><td>" + parseFloat(subtotal).toFixed(2) +
+            "</td><td> <input type = 'button' value = 'Remove' name = 'Cancel' class='btn btn-danger' onclick = 'CancelItem(this)' /> </tr ></tr > ";
+
+        tblItemList.append(itemList);
+        //FinalItemTotal();
+        ResetItem();
+    }
+
+    const FinalPayment = () => {
+        var objOrderVM = {};
+        var OrderDetails = new Array();
+        objOrderVM.ReservationId = $("#txtOrderDetailId").val();
+        objOrderVM.ItemId = $("#txtItemId").val();
+        objOrderVM.FinalTotal = $("#txtFinalTotal").val();
+        //console.log(objOrderVM.FinalTotal);
+        $("#tblItemsList").find("tr:gt(0)").each(function () {
+            var OrderDetailVM = {};
+            OrderDetailVM.SubTotal = parseFloat($(this).find("td:eq(4)").text());
+            OrderDetailVM.ItemId = parseFloat($(this).find("td:eq(0)").text());
+            OrderDetailVM.UnitPrice = parseFloat($(this).find("td:eq(2)").text());
+            OrderDetailVM.Qty = parseFloat($(this).find("td:eq(3)").text());
+
+            OrderDetails.push(OrderDetailVM);
+        });
+
+        objOrderVM.OrderDetails = OrderDetails;
+
+        //var oObj = objOrderVM.OrderDetails;
+
+        //console.log(objOrderVM);
+
+        //console.log(oObj);
+
+        //console.log(objOrderVM.OrderDetails);
+
+        $.ajax({
+            async: true,
+            type: 'POST',
+            dataType: 'JSON',
+            contentType: 'application/json, charset=utf-8',
+            data: JSON.stringify(objOrderVM),
+            url: '/OrderDetails/AddUpdateOrderDetail',
+            success: function (data) {
+                console.log(data);
+            },
+            error: function () {
+                alert("Impossible to get data from the database");
+            }
+        });
+    }
+
+    const ResetItem = () => {
+        $("#txtQuantity").val('');
+        $("#txtUnitPrice").val('');
+        $("#txtSubTotal").val('');
+        $("#txtItemName").val(0);
+        //$("#txtReservationId").val('');
+    }
+
+    const CancelItem = (itemId) => {
+        $("#txtFinalTotal").val("0.00");
+        var FinalTotal = 0.00;
+        $("#tblItemsList").find("tr:gt(0)").each(function () {
+            var Total = parseFloat($(this).find("td:eq(4)").text());
+            FinalTotal += Total;
+        });
+        $(itemId).closest('tr').remove();
+    }
+
+    const CalculateSubTotal = () => {
+        $("#txtQuantity").change(() => {
+            var uPrice = $("#txtUnitPrice").val();
+            var Qty = $("#txtQuantity").val();
+            var subTotal = uPrice * Qty;
+            $('#txtSubTotal').val(parseFloat(subTotal).toFixed(2));
+        });
+    }
+
+    //const DisplayData = () => {
+    //    $('#tblReservation').DataTable({
+    //        "ajax": {
+    //            "url": '/OrderDetail/GetAllOrderDetails',
+    //            "dataSrc": ""
+    //        },
+    //        "bSort": false,
+    //        "bDestroy": true,
+    //        columns: [
+    //            { data: 'OrderDetailId' },
+    //            { data: 'OrderNumber' },
+    //            { data: 'ItemName' },
+    //            { data: 'BookingNo' },
+    //            { data: 'UnitPrice' },
+    //            { data: 'Quantity' },
+    //            { data: 'SubTotal' },
+    //            { data: 'OrderDate' },
+    //            {
+    //                data: 'id', render: function (data, type, row, meta) {
+    //                    return  "<button class='btn btn-danger' style='margin-right:5px;' onclick='Delete(" + JSON.stringify(row) + ")'>Delete</button>"
+    //                }
+    //            }
+    //        ]
+    //    });
+    //}
+
+    const DisplaySuccessDiv = () => {
+        $("#div-success").show();
+    }
+
+    const DisplayErrorDiv = () => {
+        $("#div-error").show();
+    }
+
+    const GetReservationId = () => {
+        $("#txtBookingNo").change(() => {
+            var id = $("#txtBookingNo option:selected").val();
+            $("#txtReservationId").val(id);
+        });
+    }
+
+    const GetItemId = () => {
+        $("#txtItemName").change(() => {
+            var id = $("#txtItemName option:selected").val();
+            $("#txtItemId").val(id);
+        });
+    }
+
+    const GetunitPrice = () => {
+        $("#txtItemName").change(() => {
+            var price = $("#txtItemName option:selected").attr('id');
+            $("#txtUnitPrice").val(price);
+        });
+    }
+
+    const GetBookingNo = () => {
+        $.ajax({
+            url: '/Reservation/GetAllReservations',
+            type: 'GET',
+            dataType: 'JSON',
+            contentType: 'application/json; charset=utf-8',
+            success: function (data) {
+                var optionhtml1 = '<option value="' +
+                    0 + '" >' + "-- Search Booking Number --" + '</option>';
+                $("#txtBookingNo").append(optionhtml1);
+                var oBookNo, id, oRest;
+                $.each(data, function (i) {
+                    oBookNo = data[i].BookingNo;
+                    id = data[i].ReservationId;
+                    var optionhtml = '<option value="' + id + '">' + oBookNo + '</option>';
+                    $("#txtBookingNo").append(optionhtml);
+                });
+            },
+            error: function (err) {
+                $("#txtBookingNo").empty();
+                $("#txtBookingNo").append('<option value="">-- Search Booking Number --</option>');
+                console.log('Error in Operation: ' + err);
+            }
+        });
+    }
+
+    const GetItemName = () => {
+        $.ajax({
+            url: '/Item/GetAllItems',
+            type: 'GET',
+            dataType: 'JSON',
+            contentType: 'application/json; charset=utf-8',
+            success: function (data) {
+                var optionhtml1 = '<option value="' +
+                    0 + '" selected disabled>' + "-- Select Item --" + '</option>';
+                $("#txtItemName").append(optionhtml1);
+
+                $.each(data, function (i) {
+                    var oName = data[i].ItemName;
+                    var id = data[i].ItemId;
+                    var price = data[i].ItemPrice;
+                    var optionhtml = '<option value="' + id + '" id="'+ price +'">' + oName + '</option>';
+                    $("#txtItemName").append(optionhtml);
+                });
+            },
+            error: function (err) {
+                $("#txtItemName").empty();
+                $("#txtItemName").append('<option value="">-- Select Item --</option>');
+                console.log('Error in Operation: ' + err);
+            }
+        });
+    }
+
+    //const ReloadTable = () => {
+    //    $("#txtItemId").val(0);
+    //    $("#txtOrderDetailId").val('');
+    //    $("#txtReservationId").val('');
+    //    $("#txtStartDateTime").val('');
+    //    $("#txtDescription").val('');
+    //    $("#txtControlnumber").val('');
+    //    $("#txtStatusType").empty();
+    //    $("#txtStatusType").append('<option value="">--Select Restaurant--</option>');
+    //    $("#txtControlnumber").empty();
+    //    $("#txtControlnumber").append('<option value="">--Select Restaurant--</option>');
+    //    $("#txtRestaurant").empty();
+    //    $("#txtRestaurant").append('<option value="">--Select Restaurant--</option>');
+    //    //$("#txtFirstname").focus();
+
+    //    $("#tblUser").DataTable().clear();
+    //    $("#tblUser").DataTable().ajax.reload();
+    //}
+
+    //const Delete = (oReserv) => {
+    //    var id = oReserv.ReservationId;
+    //    if (id > 0) {
+    //        $.ajax({
+    //            url: '/Reservation/Delete?id=' + id,
+    //            type: 'DELETE',
+    //            dataType: 'JSON',
+    //            success: function (data) {
+    //                ReloadTable();
+    //                //alert('Record Successfully Deleted');
+    //            },
+    //            error: function (err) {
+    //                console.log('Error in Operation: ' + err);
+    //            }
+    //        });
+    //    }
+    //}
+
+    //$("#btnOrder").click(() => {
+
+    //    //FinalItemTotal();
+
+    //    var oBook = {
+    //        ReservationId: $("#txtReservationId").val(),
+    //        RestaurantId: $("#txtRestaurantId").val(),
+    //        ReservationStatusId: $("#txtReservationStatusId").val(),
+    //        UserId: $("#txtUserId").val(),
+    //        StartDateTime: $("#txtStartDateTime").val(),
+    //        Description: $("#txtDescription").val()
+    //    };
+
+    //    $.post("/Reservation/AddUpdateReservation", oBook)
+    //        .done((data) => {
+    //            ReloadTable();
+    //            //DisplaySuccessDiv();
+    //            DisplayData();
+    //        });
+
+    //});
+
+</script>

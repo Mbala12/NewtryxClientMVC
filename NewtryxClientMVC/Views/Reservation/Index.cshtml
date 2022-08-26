@@ -1,0 +1,366 @@
+﻿
+
+@{
+    ViewBag.Title = "Reservation";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link href="https://ajax.aspnetcdn.com/ajax/jquery.ui/1.10.4/themes/dark-hive/jquery-ui.css" rel="stylesheet" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+<link href="~/lib/select2/dist/css/select2.min.css" rel="stylesheet" />
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+<h2 class="text-center">RESERVATION BOOKING</h2>
+<hr />
+<div class="form-group" style="display:none;">
+    <input id="txtReservationId" class="form-control" name="ReservationId" />
+</div>
+<div class="form-group" style="display:none;">
+    <input id="txtUserId" class="form-control" name="UserId" />
+</div>
+<div class="form-group" style="display:none;">
+    <input id="txtRestaurantId" class="form-control" name="RestaurantId" />
+</div>
+<div class="form-group" style="display:none;">
+    <input id="txtReservationStatusId" class="form-control" name="ReservationStatusId" />
+</div>
+
+<div class="alert alert-success alert-dismissible fade show" role="alert" id="div-success" style="display: none;">
+    <strong>Congratulations</strong>. You have successfully added a new reservation. <br />
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+<div class="alert alert-danger alert-dismissible fade show" role="alert" id="div-error" style="display: none;">
+    <strong>Fail</strong>. You need to fill in any empty textboxes. <br />
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="Controlnumber">Booking Number:</label>
+                <select id="txtControlnumber" class="form-control" name="Controlnumber">
+                </select>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="RestaurantName">Restaurant Name:</label>
+                <select id="txtRestaurant" class="form-control" name="RestaurantName" required>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="StartDateTime">Reservation Date:</label>
+                <div class="input-group clockpicker" data-align="top" data-autoclose="true">
+                    <input id="txtStartDateTime" class="form-control" name="StartDateTime" required />
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="StatusType">Status Type:</label>
+                <select id="txtStatusType" class="form-control" name="StatusType" required>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-6" hidden>
+            <div class="form-group">
+                <label for="StartTime">Reservation Time:</label>
+                <input id="txtStartTime" class="form-control" name="StartTime" required />
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="Description">Description:</label>
+                <textarea class="form-control" rows="5" cols="5" id="txtDescription" name="Description"></textarea>
+            </div>
+        </div>
+    </div>
+    <div class="text-right">
+        <button id="btnBook" class="btn btn-success" value="Book">Book</button>
+    </div>
+</div>
+
+<div class="container">
+    <br />
+    <hr />
+    <h2 class="text-center">All Reservations Made</h2>
+    <hr />
+    <table id="tblReservation" class="table table-sm table-striped table-bordered m-2" >
+        <thead>
+            <tr>
+                <th>Reservation Id</th>
+                <th>Booking Number</th>
+                <th>Restaurant Name</th>
+                <th>User Names</th>
+                <th>Reservation Status</th>
+                <th>Reservation Date</th>
+                <th>Description</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script type="text/javascript">
+
+
+    $(document).ready(function () {
+
+        DisplayComboandDate();
+
+        GetRestoName();
+
+        GetRestoId();
+
+        GetStatusType();
+
+        GetReservationStatusId();
+
+        GetBookingNo();
+
+        GetUserId();
+
+        DisplayData();
+
+    });
+
+    const DisplayData = () => {
+        $('#tblReservation').DataTable({
+            "ajax": {
+                "url": '/Reservation/GetAllReservations',
+                "dataSrc": ""
+            },
+            "bSort": false,
+            "bDestroy": true,
+            columns: [
+                { data: 'ReservationId' },
+                { data: 'BookingNo' },
+                { data: 'RestoNames' },
+                { data: 'UserFullname' }, 
+                { data: 'StatusType' },
+                { data: 'BookedDT' },
+                { data: 'Description' },
+                {
+                    data: 'id', render: function (data, type, row, meta) {
+                        return  "<button class='btn btn-success' style='margin-right:5px;' onclick='Edit(" + JSON.stringify(row) + ")'>Edit</button>" +
+                                "<button class='btn btn-danger' style='margin-right:5px;' onclick='Delete(" + JSON.stringify(row) + ")'>Delete</button>"
+                    }
+                }
+            ]
+        });
+    }
+
+    const DisplayComboandDate = () => {
+
+        let dt = new Date();
+        let time = dt.getHours() + ":" + dt.getMinutes() + ":" + dt.getSeconds();
+        //var date = $("#txtStartDate").val();
+
+        $("#txtStartDateTime").datepicker();
+
+        $("#txtStartDateTime").on("change", () => {
+            $("#txtStartDateTime").val($("#txtStartDateTime").val() + " " + time);
+        });
+
+        $("#txtControlnumber").select2();
+
+        $("#txtRestaurant").select2();
+
+        $("#txtStatusType").select2();
+    }
+
+    const DisplaySuccessDiv = () => {
+        $("#div-success").show();
+    }
+
+    const DisplayErrorDiv = () => {
+        $("#div-error").show();
+    }
+
+    const GetRestoId = () => {
+        $("#txtRestaurant").change(() => {
+            var id = $("#txtRestaurant option:selected").val();
+            $("#txtRestaurantId").val(id);
+            //console.log(id);
+        });
+    }
+
+    const GetUserId = () => {
+        $("#txtControlnumber").change(() => {
+            var id = $("#txtControlnumber option:selected").val();
+            $("#txtUserId").val(id);
+            //console.log(id);
+        });
+    }
+
+    const GetReservationStatusId = () => {
+        $("#txtStatusType").change(() => {
+            var id = $("#txtStatusType option:selected").val();
+            $("#txtReservationStatusId").val(id);
+        });
+    }
+
+    const GetBookingNo = () => {
+        $.ajax({
+            url: '/User/GetAllUsers',
+            type: 'GET',
+            dataType: 'JSON',
+            contentType: 'application/json; charset=utf-8',
+            success: function (data) {
+                var optionhtml1 = '<option value="' +
+                    0 + '" >' + "-- Search Booking Number --" + '</option>';
+                $("#txtControlnumber").append(optionhtml1);
+                var oUser, id, oRest;
+                $.each(data, function (i) {
+                    oUser = data[i].Controlnumber;
+                    //console.log(oUser);
+                    id = data[i].UserId;
+                    //console.log(id);
+                    var optionhtml = '<option value="' + id + '">' + oUser + '</option>';
+                    $("#txtControlnumber").append(optionhtml);
+                });
+            },
+            error: function (err) {
+                $("#txtControlnumber").empty();
+                $("#txtControlnumber").append('<option value="">-- Search Booking Number --</option>');
+                console.log('Error in Operation: ' + err);
+            }
+        });
+    }
+
+
+    const GetRestoName = () => {
+        $.ajax({
+            url: '/User/GetRestoNames',
+            type: 'GET',
+            dataType: 'JSON',
+            contentType: 'application/json; charset=utf-8',
+            success: function (data) {
+                var optionhtml1 = '<option value="' +
+                    0 + '" selected disabled>' + "-- Select Restaurant --" + '</option>';
+                $("#txtRestaurant").append(optionhtml1);
+
+                $.each(data, function (i) {
+                    var oName = data[i].Name;
+                    var id = data[i].RestaurantId;
+                    var optionhtml = '<option value="' + id + '">' + oName + '</option>';
+                    $("#txtRestaurant").append(optionhtml);
+                });
+            },
+            error: function (err) {
+                $("#txtRestaurant").empty();
+                $("#txtRestaurant").append('<option value="">-- Select Restaurant --</option>');
+                console.log('Error in Operation: ' + err);
+            }
+        });
+    }
+
+    const GetStatusType = () => {
+        $.ajax({
+            url: '/ReservationStatus/GetAllReservationStatuses',
+            type: 'GET',
+            dataType: 'JSON',
+            contentType: 'application/json; charset=utf-8',
+            success: function (data) {
+                var optionhtml1 = '<option value="' +
+                    0 + '" selected disabled>' + "-- Select Status Type --" + '</option>';
+                $("#txtStatusType").append(optionhtml1);
+
+                $.each(data, function (i) {
+                    //console.log(data);
+                    var oType = data[i].ReservationStatusType;
+                    var id = data[i].ReservationStatusId;
+                    var optionhtml = '<option value="' + id + '">' + oType + '</option>';
+                    $("#txtStatusType").append(optionhtml);
+                });
+            },
+            error: function (err) {
+                $("#txtStatusType").empty();
+                $("#txtStatusType").append('<option value="">-- Select Status Type --</option>');
+                console.log('Error in Operation: ' + err);
+            }
+        });
+    }
+
+    //const Edit = (oUser) => {
+
+    //    $("#txtUserId").val(oUser.UserId);
+    //    $("#txtRestaurantId").val(oUser.RestaurantId);
+    //    $("#txtFirstname").val(oUser.Firstname);
+    //    $("#txtLastname").val(oUser.Lastname);
+    //    $("#txtEmail").val(oUser.Email);
+    //    $("#txtPhone").val(oUser.Phone);
+    //    $(("#signup")).modal({ show: true });
+    //}
+
+    const ReloadTable = () => {
+        $("#txtUserId").val(0);
+        $("#txtRestaurantId").val('');
+        $("#txtReservationStatusId").val('');
+        $("#txtStartDateTime").val('');
+        $("#txtDescription").val('');
+        $("#txtControlnumber").val('');
+        $("#txtStatusType").empty();
+        $("#txtStatusType").append('<option value="">--Select Restaurant--</option>');
+        $("#txtControlnumber").empty();
+        $("#txtControlnumber").append('<option value="">--Select Restaurant--</option>');
+        $("#txtRestaurant").empty();
+        $("#txtRestaurant").append('<option value="">--Select Restaurant--</option>');
+        //$("#txtFirstname").focus();
+
+        $("#tblUser").DataTable().clear();
+        $("#tblUser").DataTable().ajax.reload();
+    }
+
+    const Delete = (oReserv) => {
+        var id = oReserv.ReservationId;
+        if (id > 0) {
+            $.ajax({
+                url: '/Reservation/Delete?id=' + id,
+                type: 'DELETE',
+                dataType: 'JSON',
+                success: function (data) {
+                    ReloadTable();
+                    //alert('Record Successfully Deleted');
+                },
+                error: function (err) {
+                    console.log('Error in Operation: ' + err);
+                }
+            });
+        }
+    }
+
+    $("#btnBook").click(() => {
+
+        var oBook = {
+            ReservationId: $("#txtReservationId").val(),
+            RestaurantId: $("#txtRestaurantId").val(),
+            ReservationStatusId: $("#txtReservationStatusId").val(),
+            UserId: $("#txtUserId").val(),
+            StartDateTime: $("#txtStartDateTime").val(),
+            Description: $("#txtDescription").val()
+        };
+        
+        $.post("/Reservation/AddUpdateReservation", oBook)
+            .done((data) => {
+                ReloadTable();
+                //DisplaySuccessDiv();
+                DisplayData();
+            });
+        
+    });
+
+</script>

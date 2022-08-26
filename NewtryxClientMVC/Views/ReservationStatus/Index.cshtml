@@ -1,0 +1,132 @@
+﻿@{
+    ViewBag.Title = "Reservation Status";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+<h2 class="text-center">Add a new Reservation Status</h2>
+<div class="form-group" style="display:none;">
+    <input id="txtReservationStatusId" class="form-control" name="ReservationStatusId" />
+</div>
+
+@*@if(ViewBag.IsSuccess == true)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <strong>Congratulations</strong> You have successfully added a new reservation status. <br/>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}else{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>Wrong!!</strong> You have failed to add a new reservation status. <br/>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}*@
+
+<div class="container">
+    <div class="form-group">
+        <label for="Status">Reservation Status Type:</label>
+        <input id="txtReservationStatusType" class="form-control" name="ReservationStatusType" />
+    </div>
+
+    <div class="text-right panel-body">
+        <button id="btnSave" class="btn btn-primary">Add</button>
+    </div>
+</div> 
+
+<br />
+<hr />
+
+<h2 class="text-center">All Reservation Statuses</h2>
+<hr />
+<table id="tblReservationStatus" class="table table-sm table-striped table-bordered m-2"> 
+    <thead>
+        <tr>
+            <th>Reservation Status Id</th>
+            <th>Reservation Status Type</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table> 
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        
+        $('#tblReservationStatus').DataTable( {
+            "ajax": {
+                "url": '/ReservationStatus/GetAllReservationStatuses',
+                "dataSrc":""
+            },
+            "bSort": false,
+            "bDestroy": true,
+            columns: [
+                { data: 'ReservationStatusId' },
+                { data: 'ReservationStatusType' },
+                { 
+                    data: 'id', render: function(data, type, row, meta) { 
+                        return "<button class='btn btn-success' style='margin-right:5px;' onclick='Edit("+ JSON.stringify(row)+")'>Edit</button>"+
+                                "<button class='btn btn-danger' style='margin-right:5px;' onclick='Delete("+JSON.stringify(row)+")'>Delete</button>"
+                    } 
+                }
+            ]
+        });
+        
+    });    
+
+    const Edit = (oReservationStatus) => {
+        $("#txtReservationStatusId").val(oReservationStatus.ReservationStatusId);
+        $("#txtReservationStatusType").val(oReservationStatus.ReservationStatusType);
+        $('#btnSave').html('Update');
+    }
+
+    const ReloadTable = () => {
+        $("#txtReservationStatusType").val('');
+        $('#btnSave').html('Save');
+
+        $("#tblReservationStatus").DataTable().clear();
+        $("#tblReservationStatus").DataTable().ajax.reload();
+    }
+
+    const Delete = (oReservationStatus) => {
+        var id = oReservationStatus.ReservationStatusId;
+        if (id > 0) {
+            $.ajax({
+                url: '/ReservationStatus/Delete?id=' + id,
+                type: 'DELETE',
+                dataType: 'JSON',
+                success: function (data) {
+                    ReloadTable();
+                },
+                error: function (err) {
+                    console.log('Error in Operation: '+err);
+                }
+            })
+        }
+    }
+
+    $("#btnSave").click(() => {
+        let rss = $("#txtReservationStatusType").val();
+
+            if (rss == '') {
+                //alert('Please fill in the textbox');
+            }
+            else
+            {
+                var oReservationStatus = {
+                     txtReservationStatusId: $("#txtReservationStatusId").val(),
+                     ReservationStatusType: $("#txtReservationStatusType").val()
+                 };
+                 $.post("/ReservationStatus/AddUpdateReservationStatus", oReservationStatus)
+                     .done((data) => {
+                         ReloadTable();
+                     });
+            }
+         
+    });
+     
+</script>
